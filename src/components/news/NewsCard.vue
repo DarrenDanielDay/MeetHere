@@ -3,7 +3,7 @@
     <el-card v-if="detailed">
       <div slot="header">
         <h2>{{news.title}}</h2>
-        <span>{{news.publisher.username}}</span>
+        <span>{{news.publisher.nickname}}</span>
         发布于
         <span>{{news.time}}</span>
       </div>
@@ -90,7 +90,7 @@ class NewsCard extends Vue {
     router.push({
       name: "news-detail",
       params: {
-        news_id: this.news.id.toString()
+        newsID: this.news.id.toString()
       }
     });
   }

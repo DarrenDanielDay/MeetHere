@@ -41,7 +41,6 @@ const statuses: { [k in OrderStatusEnum]: string } = {
 @Component({})
 class OrderInfoCard extends Vue {
   @Prop({
-    type: Order,
     default() {
       return Order._default();
     }
@@ -50,8 +49,8 @@ class OrderInfoCard extends Vue {
 
   private info = {
     场地名称: this.order.site.name,
-    开始时间: this.order.startTime,
-    结束时间: this.order.endTime
+    开始时间: this.order.startTime.format("YYYY-MM-DD HH:mm"),
+    结束时间: this.order.endTime.format("YYYY-MM-DD HH-mm")
   };
 
   public get status() {

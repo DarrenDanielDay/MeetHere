@@ -1,4 +1,5 @@
 import { Method } from '../logic/backend';
+import { OrderStatusEnum } from '@/model/bean/order-bean';
 
 // 对接时需要添加
 
@@ -30,6 +31,13 @@ export interface MeetHereResponse<T> {
  */
 
 export interface MeetHereAPIParameterMapper {
+    "/cancel": {
+        userId: number,
+        reservationId: number
+    }
+    "/manager": {
+        managerId: number
+    }
     "/accept-rediscover": {
         username: string
     }
@@ -155,11 +163,27 @@ export interface MeetHereAPIParameterMapper {
 
 export type BookableEnum = -1 | 0 | 1;
 
+export type OrderStates = "未开始" | "已完成" | "已取消" | "未到场";
+
+export const orderStatesMap: Record<OrderStates, OrderStatusEnum> = {
+    未开始: OrderStatusEnum.Pending,
+    已完成: OrderStatusEnum.TimePassed,
+    已取消: OrderStatusEnum.UserCanceled,
+    未到场: OrderStatusEnum.AdminCanceled
+}
+
 /**
  * api返回类型映射接口，实现后可用于前端单独测试
  */
 
 export interface MeetHereAPIMapper {
+    "/cancel": MeetHereResponse<NoMoreInfo>;
+    "/manager": MeetHereResponse<{
+        id: number,
+        name: string,
+        password: string,
+        avatar: string
+    }>;
     "/accept-rediscover": MeetHereResponse<NoMoreInfo>;
     "/refuse-rediscover": MeetHereResponse<NoMoreInfo>;
     "/get-forget-users": MeetHereResponse<Array<{
@@ -226,7 +250,19 @@ export interface MeetHereAPIMapper {
         }
     }>;
     "/orders": MeetHereResponse<{
-        // todo
+        details: Array<{
+            id: number,
+            siteName: string,
+            siteImage: string,
+            venueName: string,
+            bookTime: string,
+            reserveDate: string,
+            cost: number,
+            beginTime: string,
+            endTime: string,
+            state: OrderStates
+        }>,
+        num_of_pages: number
     }>;
     "/get-user-by-id": MeetHereResponse<{
         id: number,
@@ -344,6 +380,7 @@ export type GetOnlyAPI =
     "/get-forget-users" |
     "/get-user-by-id"|
     "/global-comments" |
+    "/manager" |
     "/modify-comment" |
     "/news" |
     "/news-images" |
@@ -365,6 +402,7 @@ export type PostOnlyAPI =
     "/add-site" |
     "/add-news" |
     "/add-venue" |
+    "/cancel" |
     "/manager-sign-in" |
     "/reserve" |
     "/sign-up" |
@@ -406,6 +444,7 @@ export type NewsAPI =
     "/news-images";
 
 export type UserAPI =
+    "/cancel" |
     "/forbid-user" |
     "/permit-user" |
     "/sign-in" |
@@ -417,6 +456,7 @@ export type UserAPI =
     "/forget-password";
 
 export type ManagerAPI =
+    "/manager" |
     "/accept-rediscover" |
     "/refuse-rediscover" |
     "/get-forget-users" |

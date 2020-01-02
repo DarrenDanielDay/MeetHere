@@ -84,7 +84,7 @@ class NewsDetail extends Vue {
           this.news.content = bean.content;
           this.news.title = bean.title;
           this.news.time = moment(bean.time);
-          this.news.publisher = User.fromID(bean.managerId);
+          this.news.publisher = User.fromAdminID(bean.managerId);
           backend
             .get("/news-images", {
               newsId: this.newsID

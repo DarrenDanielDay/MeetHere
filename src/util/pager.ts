@@ -10,6 +10,8 @@ import { Comment } from '@/model/entity/comment';
 import backend from '@/logic/backend';
 import moment from 'moment';
 import noop from './no-operation';
+import { SiteBean } from '@/model/bean/site-bean';
+import { orderStatesMap } from './apis';
 
 export interface Pager<T extends Bean> {
     /**
@@ -103,7 +105,7 @@ export class NewsPager extends PagerImpl implements RequestPager<NewsBean> {
                         ele.push({
                             id: v.id,
                             content: v.content,
-                            publisher: User.fromID(v.managerId),
+                            publisher: User.fromAdminID(v.managerId),
                             imgs: [],
                             title: v.title,
                             time: moment(v.time)
@@ -306,10 +308,47 @@ export class OrderPager extends PagerImpl implements RequestPager<OrderBean> {
     public currentPageElements: OrderBean[] = [];
     public request(): Promise<PagerResonse<OrderBean>> {
         // todo
+        throw new Error()
+    }
+}
+
+
+export class UserOrderPager extends OrderPager {
+
+    constructor(pageSize: number, public user: UserBean) {
+        super(pageSize)
+    }
+    public request(): Promise<PagerResonse<OrderBean>> {
         return new Promise((ac, rj) => {
-            
+            backend.get("/orders", {
+                id: this.user.id,
+                page: this.currentPage - 1,
+                segment: this.pageSize
+            }).then(rs => {
+                if (rs.data.code === 200) {
+                    const ele: OrderBean[] = []
+                    rs.data.result.details.forEach(v => {
+                        ele.push({
+                            id: v.id,
+                            user:this.user,
+                            site: {
+                                name: v.siteName,
+                                image: v.siteImage,
+                            } as SiteBean,
+                            startTime: moment(v.reserveDate + " " + v.beginTime),
+                            endTime: moment(v.reserveDate + " " + v.endTime),
+                            status: orderStatesMap[v.state]
+                        })
+                    })
+                    ac({
+                        pageElements: ele,
+                        totalPageCount: rs.data.result.num_of_pages
+                    })
+                }
+            })
         })
     }
 }
+
 
 

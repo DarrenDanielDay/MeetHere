@@ -45,7 +45,7 @@ class VenueRanking extends Vue {
     const names = seriesData.map(v => v.name);
     this.chart.setOption({
       title: {
-        text: `MeetHere 场馆Top${this.orderedVenueList.length}`,
+        text: `MeetHere 场馆Top${seriesData.length}`,
         // textAlign: "center",
         x: "center"
       } as {},
@@ -128,12 +128,19 @@ class VenueRanking extends Vue {
         if (rs.data.code === 200) {
           seriesData.splice(0, seriesData.length);
           rs.data.result.venues.forEach(v => {
-            seriesData.push({
-              value: v.times,
-              name: "#" + v.rank.toString()
-            });
+            backend
+              .get("/venue-detail", {
+                id: v.venueId
+              })
+              .then(r => {
+                seriesData.push({
+                  value: v.times,
+                  name: `#${v.rank}: ${r.data.result.name}`
+                });
+                seriesData.sort();
+                this.updateChart(seriesData);
+              });
           });
-          this.updateChart(seriesData);
         } else {
           throw new Error(rs.data.message);
         }

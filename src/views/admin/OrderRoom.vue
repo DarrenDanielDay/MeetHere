@@ -29,12 +29,13 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { OrderPager } from "../../util/pager";
+import { OrderPager, UserOrderPager } from "../../util/pager";
 import Component from "vue-class-component";
 import OrderInfoCard from "../../components/order/OrderInfoCard.vue";
 import { Order } from "../../model/entity/order";
 import Confirm from "../../components/common/Confirm.vue";
 import { noop } from "vue-class-component/lib/util";
+import { userverification } from '../../store/user-verification';
 
 @Component({
   components: {
@@ -43,7 +44,7 @@ import { noop } from "vue-class-component/lib/util";
   }
 })
 class OrderRoom extends Vue {
-  public pager: OrderPager = new OrderPager(8);
+  public pager: OrderPager = new UserOrderPager(8, userverification.getCurrentUser());
   constructor() {
     super();
     this.pager.onPageChange()

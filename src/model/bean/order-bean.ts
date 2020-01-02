@@ -5,9 +5,13 @@ import { Moment } from "moment";
 import moment from "moment";
 
 export enum OrderStatusEnum {
+  // 未开始
   Pending,
+  // 已完成
   TimePassed,
+  // 已取消
   UserCanceled,
+  // 管理员取消
   AdminCanceled
 }
 

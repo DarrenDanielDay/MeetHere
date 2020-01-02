@@ -16,6 +16,7 @@
       :current-page.sync="pager.currentPage"
       :size="pager.pageSize"
       :total="pager.totalCount"
+      @current-change="onPageChange"
     ></el-pagination>
     <venue-editor ref="venue-editor" @checked="handleSubmit"></venue-editor>
     <confirm
@@ -57,7 +58,7 @@ import { Optional } from '../../model/bean/bean';
   }
 })
 class VenueRoom extends Vue {
-  private pager: VenuePager = new AllVenuePager(8);
+  private pager: VenuePager = new AllVenuePager(3);
   public get emptyVenue(): Optional<Venue> {
     const empty: Optional<Venue> = Venue._empty()
     empty.id = undefined
@@ -66,6 +67,10 @@ class VenueRoom extends Vue {
   constructor() {
     super();
     this.pager.onPageChange()
+  }
+
+  public onPageChange() {
+    this.pager.onPageChange().then(noop).catch(noop)
   }
 
   public showEditor(venue: Venue) {

@@ -5,14 +5,14 @@
         <venue-pictures :imgs="imgs"></venue-pictures>
       </el-col>
     </el-row>
-    <el-row>
+    <!-- <el-row>
       <el-col :span="12">
         <news></news>
       </el-col>
       <el-col :span="12">
         <comments :comments="comments"></comments>
       </el-col>
-    </el-row>
+    </el-row> -->
   </div>
 </template>
 

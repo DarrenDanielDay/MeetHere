@@ -8,10 +8,10 @@
             <div class="comment-username">
               <span>{{comment.user.nickname}}</span>
             </div>
-            <div style="margin: 0;font-size: 12px;">
+            <!-- <div style="margin: 0;font-size: 12px;">
               <i class="el-icon-time"></i>
               <span :datetime="comment.time" :pubdate="comment.time">{{comment.time}}</span>
-            </div>
+            </div> -->
           </div>
           <div style="flex: 1;text-align: right;">
             <slot></slot>
@@ -85,6 +85,7 @@ blockquote p {
 
 .comment-card {
   text-align: left;
+  max-width: 800px;
 }
 
 .comment-content {

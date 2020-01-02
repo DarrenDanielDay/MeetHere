@@ -1,6 +1,7 @@
 import { UserBean, defaultUserBean, defaultAdminBean, emptyUserBean, emptyAdminBean } from "../bean/user-bean";
 import { Entity } from "./entity";
 import backend from '@/logic/backend';
+import noop from '@/util/no-operation';
 
 export class User extends Entity implements UserBean {
   public static _default(): User {
@@ -9,6 +10,20 @@ export class User extends Entity implements UserBean {
 
   public static _empty(): User {
     return new User(emptyUserBean);
+  }
+
+  public static fromAdminID(id: number): User {
+    let user = new User(defaultAdminBean);
+    user.id = id
+    backend.get("/manager", {
+      managerId: id
+    }).then(rs => {
+      const b = rs.data.result
+      user.avatar = b.avatar
+      user.isAdmin = true
+      user.nickname = b.name
+    }).catch(noop)
+    return user
   }
 
   public static fromID(id: number): User {

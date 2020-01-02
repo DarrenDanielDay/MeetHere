@@ -21,9 +21,11 @@
       <el-row>
         <el-col>
           <el-pagination
+            layout="prev, pager, next, jumper"
             :page-size="pager.pageSize"
             :current-page.sync="pager.currentPage"
             :total="pager.totalCount"
+            @current-change="onPageChange"
           ></el-pagination>
         </el-col>
       </el-row>
@@ -35,9 +37,11 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import OrderInfoCard from "../../components/order/OrderInfoCard.vue";
-import { OrderPager } from "../../util/pager";
+import { OrderPager, UserOrderPager } from "../../util/pager";
 import { Order } from '../../model/entity/order';
 import noop from '../../util/no-operation';
+import { userverification } from '../../store/user-verification';
+import backend from '../../logic/backend';
 
 @Component({
   components: {
@@ -45,20 +49,42 @@ import noop from '../../util/no-operation';
   }
 })
 class OrderRoom extends Vue {
-  public pager!: OrderPager;
+  public pager: OrderPager;
 
   constructor() {
     super();
+    this.pager = new UserOrderPager(8, userverification.getCurrentUser());
+    this.pager.onPageChange()
+  }
+
+  public onPageChange() {
+    this.pager.onPageChange().then(noop).catch(noop)
   }
 
   public created() {
-    this.pager = new OrderPager(8);
     console.log('order room created!')
   }
 
   public confirmCancel(order: Order) {
     this.$confirm("确认删除订单吗?").then(v => {
-      // todo cancel order
+      backend.post("/cancel", {
+        userId: userverification.getCurrentUser().id,
+        reservationId: order.id
+      }).then(rs => {
+        if (rs.data.code === 200) {
+          this.$message({
+            message: "取消成功",
+            type: "success"
+          })
+        } else {
+          throw new Error(rs.data.message)
+        }
+      }).catch(e => {
+        this.$message({
+          message: e,
+          type: "error"
+        })
+      })
     }).catch(noop)
   }
 }

@@ -1,5 +1,6 @@
 <template>
-  <div>
+  <div class="outside">
+    <div class="page">
     <div style="padding: 5% 5% 5% 5%;margin: 0 5% 0 5%;">
       <el-row>
         <el-col :span="24">
@@ -61,6 +62,7 @@
         ></el-button>
       </el-popover>
       <comment-editor :target="venue" ref="comment-editor" commentType="对场馆说些什么吧"></comment-editor>
+    </div>
     </div>
   </div>
 </template>

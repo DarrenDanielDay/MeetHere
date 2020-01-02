@@ -65,7 +65,8 @@ class SiteCard extends Vue {
       };
     } else {
       return {
-        "min-width": "300px"
+        "min-width": "300px",
+        "max-width": "800px"
       };
     }
   }
