@@ -82,11 +82,7 @@
         <el-divider></el-divider>
         <el-row>
           <el-col :span="12">
-            <el-button 
-            icon="el-icon-back"
-            :disabled="lastStatus" 
-            @click="lastStep"
-            >上一步</el-button>
+            <el-button icon="el-icon-back" :disabled="lastStatus" @click="lastStep">上一步</el-button>
           </el-col>
           <el-col :span="12">
             <el-button
@@ -97,6 +93,13 @@
             >下一步</el-button>
           </el-col>
         </el-row>
+        <b-modal id="payQR" ref="payQR" hide-footer title="支付">
+          <div>
+            <i :class="payIcon"></i>
+            <span>{{payText}}</span>
+            <el-image :src="payQR"></el-image>
+          </div>
+        </b-modal>
       </div>
     </el-card>
   </div>
@@ -116,9 +119,19 @@ import {
   TimeTable,
   statusmapper
 } from "../../logic/time-table";
-import { handmoney } from '../../util/images';
+import { handmoney, payQR } from "../../util/images";
+import backend from "../../logic/backend";
+import moment from "moment";
+import { noop } from "vue-class-component/lib/util";
+import { BookableEnum } from "../../util/apis";
+import { ChainAction } from "../../util/action";
 
 const testTable: StatusClass[] = [];
+const bookableMapper: Record<BookableEnum, StatusClass> = {
+  "-1": "inavailable",
+  "0": "available",
+  "1": "occupied"
+};
 let i = 0;
 while (i < 8) {
   testTable.push("inavailable");
@@ -157,12 +170,17 @@ class MakeOrderCard extends Vue {
   })
   private pickedSite!: Site;
 
+  private pickedInterval?: [number, number];
+
   private currentStep: number;
   private date: Date = new Date();
   private buttons: ButtonState[];
   private typemapper = statusmapper;
   private buttonTable: TimeTable;
   private handmoney = handmoney;
+  private payQR = payQR;
+  private payIcon: "el-icon-loading" | "" | "el-icon-check" = "";
+  private payText: "请支付" | "支付中" | "支付完成！" = "请支付";
   /**
    * 总共的步骤数，0~3
    * 选择日期->选择时间段->支付->确认
@@ -190,13 +208,62 @@ class MakeOrderCard extends Vue {
   }
   public nextStep() {
     if (this.currentStep === 0) {
-      // todo get /site-time-list
+      this.getAvailable();
+      return;
     }
+
+    if (this.currentStep === 1) {
+      this.pickedInterval = this.buttonTable.getInterval();
+      if (!this.pickedInterval) {
+        this.$message({
+          message: "请选择一个正确的时间段！",
+          type: "info"
+        });
+        return;
+      }
+    }
+
     if (this.currentStep < this.totalSteps - 1) {
       this.currentStep++;
     }
     this.disableLastNextStep();
   }
+
+  public getAvailable() {
+    // todo get /site-time-list
+    backend
+      .get("/site-time-list", {
+        id: this.pickedSite.id,
+        date: moment(this.date).format("YYYY-MM-DD")
+      })
+      .then(rs => {
+        const rst = rs.data.result;
+        if (rs.data.code === 200) {
+          const times: StatusClass[] = [];
+          rst.times.siteTimes.forEach(v => {
+            times.push(bookableMapper[v.bookable]);
+          });
+          this.buttonTable = new TimeTable(times);
+          this.$forceUpdate();
+          this.currentStep++;
+          this.disableLastNextStep();
+          this.updateButtons();
+        } else {
+          throw new Error(rs.data.message);
+        }
+      })
+      .catch(e => {
+        this.$message({
+          message: "无法查询场地可预约时间段",
+          type: "error"
+        });
+        this.$message({
+          message: `${e}`,
+          type: "error"
+        });
+      });
+  }
+
   public timePiece(row: number, col: number) {
     return new TimePiece((row - 1) * 12 + (col - 1)).beginTime;
   }
@@ -214,10 +281,49 @@ class MakeOrderCard extends Vue {
   }
 
   public pay() {
-    this.$message({
-      message: "支付成功！",
-      type: "success"
-    });
+    const action = new ChainAction()
+      .next(() => {
+        this.$bvModal.show("payQR");
+        setTimeout(() => {
+          action.notify();
+        }, 3000);
+      })
+      .wait()
+      .next(() => {
+        this.payText = "支付中";
+        this.payIcon = "el-icon-loading";
+        setTimeout(() => {
+          action.notify();
+        }, 5000);
+      })
+      .wait()
+      .next(() => {
+        this.payText = "支付完成！";
+        this.payIcon = "el-icon-check";
+        setTimeout(() => {
+          // todo
+          action.notify();
+        }, 3000);
+      })
+      .wait()
+      .next(() => {
+        this.$bvModal.hide("payQR");
+      });
+    action
+      .perform()
+      .then(() => {
+        this.$message({
+          message: "预定成功！",
+          type: "success"
+        });
+        this.nextStep();
+      })
+      .catch(e => {
+        this.$message({
+          message: `预定失败！${e}`,
+          type: "error"
+        });
+      });
   }
 
   public created() {
@@ -225,8 +331,9 @@ class MakeOrderCard extends Vue {
   }
 
   private disableLastNextStep() {
-    this.lastStatus = this.currentStep === 0;
-    this.nextStatus = this.currentStep + 1 === this.totalSteps;
+    const alldisabled = this.currentStep === this.totalSteps - 1;
+    this.lastStatus = this.currentStep === 0 || alldisabled;
+    this.nextStatus = this.currentStep + 2 === this.totalSteps || alldisabled;
   }
 }
 

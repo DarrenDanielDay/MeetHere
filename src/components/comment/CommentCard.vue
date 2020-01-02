@@ -6,7 +6,7 @@
           <SmallAvatar :user="comment.user" style></SmallAvatar>
           <div style="margin-left: 10px;">
             <div class="comment-username">
-              <span>{{comment.user.username}}</span>
+              <span>{{comment.user.nickname}}</span>
             </div>
             <div style="margin: 0;font-size: 12px;">
               <i class="el-icon-time"></i>

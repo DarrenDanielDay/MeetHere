@@ -1,9 +1,9 @@
 <template>
   <div>
     <!-- <b-modal id="login-modal" ref="login-modal" title="登录" hide-footer> -->
-    <div v-on:keyup.enter="onSubmit">
+    <div>
       <el-tabs v-model="type">
-        <el-tab-pane label="普通用户登录" name="user">
+        <el-tab-pane label="普通用户登录" name="user" v-on:keyup.enter="onUserLogin">
           <el-form ref="user-form" :model="loginForm" :rules="loginRules">
             <el-form-item label="用户名" prop="username">
               <el-input
@@ -30,7 +30,7 @@
             </el-form-item>
           </el-form>
         </el-tab-pane>
-        <el-tab-pane label="管理员登录" name="admin">
+        <el-tab-pane label="管理员登录" name="admin" v-on:keyup.enter="onAdminLogin">
           <el-form ref="admin-form" :model="loginForm" :rules="loginRules">
             <el-form-item label="管理员名" prop="username">
               <el-input
@@ -57,6 +57,16 @@
             </el-form-item>
           </el-form>
         </el-tab-pane>
+        <el-tab-pane name="forget" label="忘记密码">
+          <el-form>
+            <el-form-item>
+              <el-input v-model="forgetName" placeholder="用户名"></el-input>
+            </el-form-item>
+            <el-form-item>
+              <el-button @click="onForget">提交重置密码申请</el-button>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
       </el-tabs>
     </div>
   </div>
@@ -79,6 +89,7 @@ import { BModal } from "bootstrap-vue";
 import { MeetHereResponse } from "../../util/apis";
 import { UserBean } from "../../model/bean/user-bean";
 import { userverification } from "../../store/user-verification";
+import noop from "../../util/no-operation";
 
 @Component({
   components: {
@@ -87,7 +98,7 @@ import { userverification } from "../../store/user-verification";
 })
 class Login extends Vue {
   private type: "user" | "admin" = "user";
-  private loginForm: { username: string; password: "" } = {
+  private loginForm: { username: string; password: string } = {
     username: "",
     password: ""
   };
@@ -99,14 +110,36 @@ class Login extends Vue {
   private userLoginAction: ChainAction;
   private adminLoginAction: ChainAction;
 
+  private forgetName: string = "";
+
   constructor() {
     super();
     this.userLoginAction = new ChainAction();
     this.adminLoginAction = new ChainAction();
   }
 
-  public onSubmit() {
+  public onForget() {
+    backend
+      .get("/forget-password", { username: this.forgetName })
+      .then(rs => {
+        const tp = rs.data.code === 200 ? "success" : "error";
+        this.$message({
+          message: rs.data.message,
+          type: tp
+        });
+      })
+      .catch(noop);
+  }
+
+  public onUserLogin() {
     this.userLoginAction
+      .perform()
+      .then()
+      .catch();
+  }
+
+  public onAdminLogin() {
+    this.adminLoginAction
       .perform()
       .then()
       .catch();
@@ -116,12 +149,13 @@ class Login extends Vue {
     this.userLoginAction
       .next(new CheckFormAction(this, "user-form"))
       .next(() => {
+        const param = {
+          identifier: this.loginForm.username,
+          identityType: "nickname",
+          credential: this.loginForm.password
+        } as const;
         backend
-          .post("/sign-in", {
-            id: this.loginForm.username,
-            method: "nickname",
-            credential: this.loginForm.password
-          })
+          .post("/sign-in", param)
           .then(rs => {
             if (rs.data.code === 200) {
               this.$message({
@@ -129,12 +163,18 @@ class Login extends Vue {
                 type: "success"
               });
               // todo save user
-              //   userverification.setCurrentUser({
-              //       nickname: this.loginForm.username,
-              //       isAdmin: false,
-              //       isLoggedIn: true,
-              //       avatar:
-              //   })
+              const result = rs.data.result;
+              if (result) {
+                userverification.updateCurrentUser({
+                  id: result.id,
+                  nickname: result.nickname,
+                  avatar: result.avatar,
+                  mobilephone: result.phone,
+                  email: result.email,
+                  isAdmin: false,
+                  isLoggedIn: true
+                });
+              }
               this.userLoginAction.notify();
             } else {
               console.error(rs.data.message);
@@ -169,14 +209,14 @@ class Login extends Vue {
         backend
           // todo admin login 对接
           .post("/sign-in", {
-            id: this.loginForm.username,
-            method: "nickname",
+            identifier: this.loginForm.username,
+            identityType: "nickname",
             credential: this.loginForm.password
           })
           .then(rs => {
             if (rs.data.code === 200) {
               this.$message({
-                message: "登录成功",
+                message: "管理员登录成功",
                 type: "success"
               });
               // todo save user
@@ -186,9 +226,13 @@ class Login extends Vue {
               //       isLoggedIn: true,
               //       avatar:
               //   })
+              userverification.updateCurrentUser({
+                isAdmin: true,
+                isLoggedIn: true
+              });
+              userverification.saveCurrentUser();
               this.adminLoginAction.notify();
             } else {
-              console.error(rs.data.message);
               this.$message({
                 message: `登录失败！${rs.data.message}`,
                 type: "error"

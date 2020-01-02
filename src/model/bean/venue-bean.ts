@@ -45,3 +45,7 @@ export const emptyVenueBean: VenueBean = {
   sites: [],
   cover: ""
 };
+
+export function isVenueBean(obj: any): obj is VenueBean {
+  return obj && obj.sites !== undefined;
+} 

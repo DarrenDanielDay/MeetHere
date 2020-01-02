@@ -28,13 +28,13 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
-import { OrderPager } from '../../util/pager';
-import Component from 'vue-class-component';
-import OrderInfoCard from '../../components/order/OrderInfoCard.vue';
-import { Order } from '../../model/entity/order';
-import Confirm from '../../components/common/Confirm.vue';
-import { noop } from 'vue-class-component/lib/util';
+import Vue from "vue";
+import { OrderPager } from "../../util/pager";
+import Component from "vue-class-component";
+import OrderInfoCard from "../../components/order/OrderInfoCard.vue";
+import { Order } from "../../model/entity/order";
+import Confirm from "../../components/common/Confirm.vue";
+import { noop } from "vue-class-component/lib/util";
 
 @Component({
   components: {
@@ -42,31 +42,33 @@ import { noop } from 'vue-class-component/lib/util';
   }
 })
 class OrderRoom extends Vue {
-    public pager: OrderPager = new OrderPager(8);
-    constructor() {
-        super();
-    }
-    public confirmReject(order: Order) {
-      const confirm = this.$refs["reject-order-confirm"];
-      if (confirm instanceof Confirm) {
-        confirm.show().then(() => {
+  public pager: OrderPager = new OrderPager(8);
+  constructor() {
+    super();
+  }
+  public confirmReject(order: Order) {
+    const confirm = this.$refs["reject-order-confirm"];
+    if (confirm instanceof Confirm) {
+      confirm
+        .show()
+        .then(() => {
           this.handleReject(order);
-        }).catch(noop);
-      }
+        })
+        .catch(noop);
     }
+  }
 
-    public handleReject(order: Order) {
-      // todo handle reject 
-      this.$message({
-        message: "取消成功！",
-        type: "success"
-      })
-    }
+  public handleReject(order: Order) {
+    // todo handle reject
+    this.$message({
+      message: "取消成功！",
+      type: "success"
+    });
+  }
 }
 
 export { OrderRoom };
 export default OrderRoom;
-
 </script>
 
 <style scoped>

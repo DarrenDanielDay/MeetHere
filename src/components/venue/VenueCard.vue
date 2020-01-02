@@ -47,7 +47,6 @@ import router from '@/router';
 class VenueCard extends Vue {
 
     @Prop({
-        type: Venue,
         required: true
     })
     public venue!: Venue;
@@ -60,7 +59,7 @@ class VenueCard extends Vue {
         router.push({
         name: 'venue-detail',
         params: {
-          venue_id: this.venue.id.toString()
+          venueID: this.venue.id.toString()
         }
       })
     }

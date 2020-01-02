@@ -84,7 +84,11 @@ class Editor extends Vue {
   }
 
   public show(): void {
-    this.$bvModal.show(this.id);
+    // this.$bvModal.show(this.id);
+    const modal = this.$refs[this.id];
+    if (modal instanceof BModal) {
+      modal.show()
+    }
     this.editorAction
       .clear()
       .next(new CallbackAction (() => {

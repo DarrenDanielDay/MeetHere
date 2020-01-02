@@ -1,6 +1,7 @@
 import { User } from '@/model/entity/user';
 import { UserBean } from '@/model/bean/user-bean';
 import { forceCast } from '@/util/cast';
+import { Optional } from '@/model/bean/bean';
 
 export namespace userverification {
 
@@ -18,12 +19,21 @@ export namespace userverification {
         return currentUser;
     }
 
-    export function setCurrentUser(user: UserBean) {
-        localStorage.setItem(cache, JSON.stringify(user));
+    // export function setCurrentUser(user: UserBean) {
+    //     currentUser.update(user)
+    //     saveCurrentUser()
+    // }
+    
+    export function saveCurrentUser() {
+        console.log(currentUser, "saving...")
+        localStorage.setItem(cache, JSON.stringify(currentUser));
     }
 
-    export function updateCurrentUser(user: UserBean) {
-        return setCurrentUser(user);
+    export function updateCurrentUser(user: Optional<UserBean>) {
+        console.log('updating')
+        currentUser.update(user);
+        console.log(currentUser,"current user")
+        saveCurrentUser();
     }
 
     export function clearCurrentUser() {

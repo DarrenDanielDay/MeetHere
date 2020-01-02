@@ -56,6 +56,18 @@ export class TimeTable {
         this.devide();
     }
 
+    public getInterval(): [number, number] | undefined {
+        if (this.p1 && this.p2) {
+            return [Math.min(this.p1,this.p2),Math.max(this.p1,this.p2)]
+        } else if (this.p1) {
+            return [this.p1, this.p1]
+        } else if (this.p2) {
+            return [this.p2, this.p2]
+        } else {
+            return undefined
+        }
+    }
+
     public handleClick(id: number) {
         if (id === this.p1) {
             if (this.p2 !== undefined) {

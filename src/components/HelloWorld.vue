@@ -46,7 +46,8 @@
     <!-- <venue-ranking></venue-ranking> -->
     <!-- <test :testValue="binded"></test> -->
     <!-- <news-room></news-room> -->
-    <order></order>
+    <!-- <order></order> -->
+    <news-detail></news-detail>
     <ul>
       <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
       <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
@@ -81,6 +82,7 @@ import VenueRanking from './statistics/VenuesRanking.vue';
 import NewsRoom from '../views/admin/NewsRoom.vue';
 import Test from './common/Test.vue';
 import OrderInfoCard from './order/OrderInfoCard.vue';
+import NewsDetail from '../views/news/NewsDetail.vue';
 
 interface Modal  {num: number}
 
@@ -108,7 +110,8 @@ const testComments = [
     VenueEditor,
     NewsRoom,
     Test:Test,
-    order: OrderInfoCard
+    order: OrderInfoCard,
+    NewsDetail:NewsDetail
   }
 })
 export default class HelloWorld extends Vue {

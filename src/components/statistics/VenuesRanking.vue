@@ -1,8 +1,7 @@
 <template>
-<div style="width: 100%; display: flex; justify-content: center">
-
-  <div :id="chartID" class="venue-ranking-chart"></div>
-</div>
+  <div style="width: 100%; display: flex; justify-content: center">
+    <div :id="chartID" class="venue-ranking-chart"></div>
+  </div>
 </template>
 
 <script lang="ts">
@@ -11,6 +10,8 @@ import Component from "vue-class-component";
 import echarts, { ECharts } from "echarts";
 import { Prop } from "vue-property-decorator";
 import { Venue } from "../../model/entity/venue";
+import backend from "../../logic/backend";
+import noop from "../../util/no-operation";
 let venues: Array<{ venue: Venue; orders: number }> = [];
 for (let i = 0; i < 9; i++) {
   venues.unshift({ venue: Venue._default(), orders: i });
@@ -39,25 +40,15 @@ class VenueRanking extends Vue {
   constructor() {
     super();
   }
-  public mounted() {
-    let node = document.getElementById(this.chartID);
-    if (!(node instanceof HTMLDivElement)) {
-      // always false
-      return;
-    }
-    this.chart = echarts.init(node);
-    let names = this.orderedVenueList.map(item => item.venue.name);
-    let seriesData = this.orderedVenueList.map(item => {
-      return { value: item.orders, name: item.venue.name };
-    });
 
+  public updateChart(seriesData: Array<{ value: number; name: string }>) {
+    const names = seriesData.map(v => v.name);
     this.chart.setOption({
       title: {
         text: `MeetHere 场馆Top${this.orderedVenueList.length}`,
         // textAlign: "center",
-        // x: "center"
-        
-      },
+        x: "center"
+      } as {},
       tooltip: {
         trigger: "item",
         formatter: "{a} <br/>{b} : {c} ({d}%)"
@@ -120,6 +111,37 @@ class VenueRanking extends Vue {
         }
       ]
     });
+  }
+
+  public mounted() {
+    let node = document.getElementById(this.chartID);
+    if (!(node instanceof HTMLDivElement)) {
+      // always false
+      return;
+    }
+    this.chart = echarts.init(node);
+    let names = this.orderedVenueList.map(item => item.venue.name);
+    let seriesData: Array<{ value: number; name: string }> = [];
+    backend
+      .get("/topNVenues", { n: 10 })
+      .then(rs => {
+        if (rs.data.code === 200) {
+          seriesData.splice(0, seriesData.length);
+          rs.data.result.venues.forEach(v => {
+            seriesData.push({
+              value: v.times,
+              name: "#" + v.rank.toString()
+            });
+          });
+          this.updateChart(seriesData);
+        } else {
+          throw new Error(rs.data.message);
+        }
+      })
+      .catch(noop);
+    // seriesData = this.orderedVenueList.map(item => {
+    //   return { value: item.orders, name: item.venue.name };
+    // });
   }
 }
 

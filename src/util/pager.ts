@@ -2,10 +2,14 @@ import { Bean } from '@/model/bean/bean';
 import { User } from '@/model/entity/user';
 import { News } from '@/model/entity/news';
 import { UserBean } from '@/model/bean/user-bean';
-import { NewsBean } from '@/model/bean/news-bean';
-import { CommentBean } from '@/model/bean/comment-bean';
-import { VenueBean } from '@/model/bean/venue-bean';
+import { NewsBean, isNewsBean } from '@/model/bean/news-bean';
+import { CommentBean, CommentTarget } from '@/model/bean/comment-bean';
+import { VenueBean, defaultVenueBean } from '@/model/bean/venue-bean';
 import { OrderBean } from '@/model/bean/order-bean';
+import { Comment } from '@/model/entity/comment';
+import backend from '@/logic/backend';
+import moment from 'moment';
+import noop from './no-operation';
 
 export interface Pager<T extends Bean> {
     /**
@@ -41,10 +45,13 @@ export interface RequestPager<T extends Bean> extends Pager<T> {
 function updatePage<T extends Bean>(pager: RequestPager<T>): Promise<any> {
     return new Promise((ac, rj) => {
         pager.request().then((list) => {
+            console.log('request success push!')
             pager.currentPageElements.splice(0, pager.currentPageElements.length);
+            console.log(list);
             list.pageElements.forEach((item) => {
                 pager.currentPageElements.push(item);
             })
+            console.log(pager)
             pager.totalCount = list.totalPageCount * pager.pageSize;
             ac();
         }).catch((e) => {
@@ -58,7 +65,7 @@ abstract class PagerImpl implements RequestPager<Bean> {
     public totalCount?: number | undefined;
     public currentPage: number;
     constructor(
-        public pageSize: number,
+        public pageSize: number
     ) {
         this.currentPageElements = []
         this.currentPage = 1;
@@ -85,9 +92,37 @@ export class NewsPager extends PagerImpl implements RequestPager<NewsBean> {
         // todo
         // throw new Error();
         return new Promise((ac, rj) => {
-            ac({
-                pageElements: [News._default()],
-                totalPageCount: 7
+            backend.get("/all-news", {
+                page: this.currentPage - 1,
+                segment: this.pageSize
+            }).then((rs) => {
+                if (rs.data.code === 200) {
+                    const r = rs.data.result;
+                    const ele: NewsBean[] = []
+                    r.newsList.forEach(v => {
+                        ele.push({
+                            id: v.id,
+                            content: v.content,
+                            publisher: User.fromID(v.managerId),
+                            imgs: [],
+                            title: v.title,
+                            time: moment(v.time)
+                        })
+                    })
+                    ele.forEach(v => {
+                        backend.get("/news-images", {
+                            newsId: v.id
+                        }).then((rr) => {
+                            v.imgs = rr.data.result.images
+                        }).catch(noop)
+                    })
+                    ac({
+                        pageElements: ele,
+                        totalPageCount: r.numOfPages
+                    }) 
+                } else {
+                    rj(rs.data.message)
+                }
             })
         })
     }
@@ -95,9 +130,85 @@ export class NewsPager extends PagerImpl implements RequestPager<NewsBean> {
 
 export class CommentPager extends PagerImpl implements RequestPager<CommentBean> {
     public currentPageElements: CommentBean[] = [];
+    constructor(public pageSize: number, public target: CommentTarget) {
+        super(pageSize)
+    }
     public request(): Promise<PagerResonse<CommentBean>> {
         // todo
-        throw new Error();
+        // throw new Error();
+        return new Promise((ac, rj) => {
+            // const rnd = Math.floor(Math.random()*this.pageSize)
+            const ele: Comment[] = []
+            // for (let i = 0; i < rnd; i++) {
+            //     ele.push(Comment._default());
+            // }
+            // ac({
+            //     pageElements: ele,
+            //     totalPageCount: 7
+            // })
+            if (!this.target) {
+                backend.get("/global-comments",{
+                    page: this.currentPage - 1,
+                    segment: this.pageSize
+                }).then((rs) => {
+                    console.log(rs);
+                    rs.data.result.comments.forEach(v => {
+                        ele.push(new Comment({
+                            id: v.id,
+                            content: v.content,
+                            target: this.target,
+                            time: moment(),
+                            user: User.fromID(v.userId)
+                        }))
+                    })
+                    ac({
+                        pageElements:ele,
+                        totalPageCount: rs.data.result.num_of_pages
+                    })
+                }).catch(noop);
+            } else if (isNewsBean(this.target)) {
+                backend.get("/news-comments", {
+                    page: this.currentPage - 1,
+                    segment: this.pageSize,
+                    newsId: this.target.id
+                }).then(rs => {
+                    rs.data.result.comments.forEach(v => {
+                        ele.push(new Comment({
+                            id: v.id,
+                            content: v.content,
+                            target: this.target,
+                            time: moment(),
+                            user: User.fromID(v.userId)
+                        }))
+                    })
+                    ac({
+                        pageElements:ele,
+                        totalPageCount: rs.data.result.num_of_pages
+                    })
+                }).catch(noop)
+            } else {
+                backend.get("/venue-comments", {
+                    page: this.currentPage - 1,
+                    segment: this.pageSize,
+                    venueId: this.target.id
+                }).then(rs => {
+                    this.totalCount = rs.data.result.num_of_pages;
+                    rs.data.result.comments.forEach(v => {
+                        ele.push(new Comment({
+                            id: v.id,
+                            content: v.content,
+                            target: this.target,
+                            time: moment(),
+                            user: User.fromID(v.userId)
+                        }))
+                    })
+                    ac({
+                        pageElements:ele,
+                        totalPageCount: rs.data.result.num_of_pages
+                    })
+                }).catch(noop)
+            }
+        })
     }
 }
 
@@ -109,11 +220,95 @@ export class VenuePager extends PagerImpl implements RequestPager<VenueBean> {
     }
 }
 
+export class AllVenuePager extends VenuePager {
+    public request(): Promise<PagerResonse<VenueBean>> {
+        return new Promise((ac, rj) => {
+            backend.get("/venues",{
+                page: this.currentPage-1,
+                segment: this.pageSize
+            }).then((rs) => {
+                const dt = rs.data
+                if (dt.code === 200) {
+                    const ls: VenueBean[] = [];
+                    dt.result.venues.forEach(v => {
+                        ls.push({
+                            id: v.id,
+                            name: v.name,
+                            address: v.address,
+                            cover: v.cover,
+                            beginTime: moment.utc(v.beginTime),
+                            endTime: moment.utc(v.endTime)
+                        } as VenueBean)
+                    })
+                    ac({
+                        pageElements: ls,
+                        totalPageCount: dt.result.num_of_pages
+                    })
+                }
+            }).catch(noop)
+        });
+    }
+}
+
+export class SearchVenuePager extends VenuePager {
+
+    public keyword?: string;
+    public searchResult?: VenueBean[];
+
+    constructor(pageSize: number) {
+        super(pageSize)
+    }
+
+    public request(): Promise<PagerResonse<VenueBean>> {
+        // if (this.searchResult) {
+        //     return new Promise((ac) => {
+        //         if (this.searchResult) {
+        //             const start = this.pageSize * (this.currentPage - 1)
+        //             ac({
+        //                 pageElements:this.searchResult.slice(start,start + this.pageSize),
+        //                 totalPageCount:Math.floor(this.searchResult.length/this.pageSize)
+        //             })
+        //         }
+        //     })
+        // }
+        return new Promise((ac, rj) => {
+            // todo search with keyword
+            if (this.keyword) {
+
+                backend.get("/venue", {
+                    name: this.keyword,
+                    segment:this.pageSize,
+                    page: this.currentPage - 1
+                }).then(rs => {
+                    const ele: VenueBean[] = []
+                    rs.data.result.venues.forEach(v => {
+                        ele.push({
+                            id: v.id,
+                            name: v.name,
+                            address: v.address,
+                            cover: v.cover,
+                            beginTime: moment.utc(v.beginTime),
+                            endTime: moment.utc(v.endTime)
+                        } as VenueBean)
+                    })
+                    ac({
+                         pageElements: ele,
+                         totalPageCount: rs.data.result.num_of_pages
+
+                    })
+                }).catch(noop)
+            }
+        })
+    }
+}
+
 export class OrderPager extends PagerImpl implements RequestPager<OrderBean> {
     public currentPageElements: OrderBean[] = [];
     public request(): Promise<PagerResonse<OrderBean>> {
         // todo
-        throw new Error();
+        return new Promise((ac, rj) => {
+
+        })
     }
 }
 

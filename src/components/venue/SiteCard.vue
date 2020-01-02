@@ -47,7 +47,6 @@ import router from "@/router";
 @Component({})
 class SiteCard extends Vue {
   @Prop({
-    type: Site,
     required: true
   })
   public site!: Site;
@@ -79,7 +78,7 @@ class SiteCard extends Vue {
     router.push({
       name: "make-order",
       params: {
-        site_id: this.site.id.toString()
+        siteID: this.site.id.toString()
       }
     });
   }

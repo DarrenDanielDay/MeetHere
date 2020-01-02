@@ -86,7 +86,7 @@ class NewsEditor extends Vue {
         this.imgs.push({ name: `${this.k++}`, url: this.newsCopy.imgs[i] });
       }
     }
-    return news.clone();
+    return new News(news);
   }
 
   public show(news: News) {

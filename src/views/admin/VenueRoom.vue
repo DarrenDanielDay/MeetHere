@@ -31,66 +31,73 @@
         slot="reference"
         icon="el-icon-plus"
         type="info"
-        @click="showEditor(editorData.emptyVenue)"
+        @click="showEditor(emptyVenue)"
       ></el-button>
     </el-popover>
   </div>
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
-import Component from 'vue-class-component';
-import VenueCard from '@/components/venue/VenueCard.vue';
-import { VenuePager } from '../../util/pager';
-import { VenueBean } from '../../model/bean/venue-bean';
-import VenueEditor from '../../components/admin/VenueEditor.vue';
-import { Venue } from '@/model/entity/venue';
-import Confirm from '../../components/common/Confirm.vue';
-import noop from '../../util/no-operation';
-
+import Vue from "vue";
+import Component from "vue-class-component";
+import VenueCard from "@/components/venue/VenueCard.vue";
+import { VenuePager, AllVenuePager } from "../../util/pager";
+import { VenueBean } from "../../model/bean/venue-bean";
+import VenueEditor from "../../components/admin/VenueEditor.vue";
+import { Venue } from "@/model/entity/venue";
+import Confirm from "../../components/common/Confirm.vue";
+import noop from "../../util/no-operation";
+import { Optional } from '../../model/bean/bean';
 
 @Component({
-    components: {
-        VenueCard: VenueCard,
-        VenueEditor: VenueEditor
-    }
+  components: {
+    VenueCard: VenueCard,
+    VenueEditor: VenueEditor,
+    Confirm: Confirm
+  }
 })
 class VenueRoom extends Vue {
+  private pager: VenuePager = new AllVenuePager(8);
+  public get emptyVenue(): Optional<Venue> {
+    const empty: Optional<Venue> = Venue._empty()
+    empty.id = undefined
+    return empty
+  }
+  constructor() {
+    super();
+    this.pager.onPageChange()
+  }
 
-    private pager: VenuePager = new VenuePager(8);
-
-    constructor() {
-        super();
+  public showEditor(venue: Venue) {
+    const editor = this.$refs["venue-editor"];
+    if (editor instanceof VenueEditor) {
+      editor.show(venue);
     }
+  }
 
-    public showEditor(venue: Venue) {
-        const editor = this.$refs["venue-editor"];
-        if (editor instanceof VenueEditor) {
-            editor.show(venue);
-        }
-    }
+  public handleSubmit(venue: Venue) {
+    // todo submit edit/create venue
+  }
 
-    public handleSubmit(venue: Venue) {
-        // todo submit edit/create venue
+  public confirmDelete(venue: Venue) {
+    const confirm = this.$refs["delete-venue-confirm"];
+    if (confirm instanceof Confirm) {
+      confirm
+        .show()
+        .then(() => {
+          this.handleDelete(venue);
+        })
+        .catch(noop);
     }
+  }
 
-    public confirmDelete(venue: Venue) {
-        const confirm = this.$refs["delete-venue-confirm"];
-        if (confirm instanceof Confirm) {
-            confirm.show().then(() => {
-                this.handleDelete(venue);
-            }).catch(noop);
-        }
-    }
-
-    public handleDelete(venue: Venue) {
-        // todo delete venue
-    }
+  public handleDelete(venue: Venue) {
+    // todo delete venue
+  }
 }
 
 export { VenueRoom };
 export default VenueRoom;
-
 </script>
 
 <style scoped>

@@ -14,6 +14,10 @@ class Logo extends Vue {
         this.logoImg = logo;
     }
 }
+
+export { Logo };
+export default Logo;
+
 </script>
 
 <style>

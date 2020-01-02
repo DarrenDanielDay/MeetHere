@@ -19,6 +19,9 @@ export class Comment extends Entity implements CommentBean {
   public time!: Moment;
   public target!: CommentTarget;
   public content!: string;
+  constructor(bean?: CommentBean) {
+    super(bean)
+  }
   public _default(): Comment {
     return new Comment(defaultCommentBean);
   }

@@ -54,3 +54,7 @@ export const emptyNewsBean: NewsBean = {
   imgs: [],
   publisher: emptyUserBean
 };
+
+export function isNewsBean(obj: any): obj is NewsBean {
+  return obj && obj.content !== undefined && obj.publisher !== undefined
+}

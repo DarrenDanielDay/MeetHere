@@ -61,8 +61,11 @@ import { Venue } from "../../model/entity/venue";
 import { ElFormRule } from "../../util/element-ui-types";
 import { Site } from "../../model/entity/site";
 import Editor from "../common/Editor.vue";
-import { Constructor } from 'vue/types/options';
-import SiteCard from '../venue/SiteCard.vue';
+import { Constructor } from "vue/types/options";
+import SiteCard from "../venue/SiteCard.vue";
+import backend from "../../logic/backend";
+import noop from "../../util/no-operation";
+import { emptyVenueBean } from '../../model/bean/venue-bean';
 
 const introMaxWords = 15;
 
@@ -87,7 +90,11 @@ class VenueEditor extends Vue {
   private introMaxWords: number = introMaxWords;
   private venueCopy: Venue = Venue._default();
   public show(venue: Venue) {
-    this.venueCopy = venue.clone();
+    if (venue.id !== emptyVenueBean.id) {
+      this.venueCopy = Venue.fromID(venue.id);
+    } else {
+      this.venueCopy = Venue._empty()
+    }
     const venueEditor = this.$refs["venue-editor"];
     if (venueEditor instanceof Editor) {
       venueEditor.show();
@@ -112,11 +119,25 @@ class VenueEditor extends Vue {
   }
   private handleDelete(index: number) {
     // todo delete site
-    this.$message({
-      type: "success",
-      message: `删除${index}成功！`
-    });
-    this.venueCopy.sites.splice(index, 1);
+    backend
+      .delete("/delete-site", {
+        id: this.venueCopy.sites[index].id
+      })
+      .then(rs => {
+        if (rs.data.code === 200) {
+          this.$message({
+            type: "success",
+            message: `删除${index}成功！`
+          });
+          this.venueCopy.sites.splice(index, 1);
+        } else {
+          this.$message({
+            message: rs.data.message,
+            type: "error"
+          });
+        }
+      })
+      .catch(noop);
   }
 }
 export default VenueEditor;

@@ -14,7 +14,7 @@ import { forceCast } from '../util/cast';
 import app from '@/main';
 export type Method = "get" | "post" | "put" | "delete";
 
-export type Parameter<API extends keyof MeetHereAPIMapper> = Dictionary<string> & MeetHereAPIParameterMapper[API];
+export type Parameter<API extends keyof MeetHereAPIParameterMapper> = MeetHereAPIParameterMapper[API];
 
 
 type GetAPI = MeetHereAPI & GetOnlyAPI & keyof MeetHereAPIMapper;
@@ -24,9 +24,9 @@ type DeleteAPI = MeetHereAPI & DeleteOnlyAPI & keyof MeetHereAPIMapper;
 
 export interface Backend {
     get<T extends GetAPI>(api: T, params: Parameter<T>): Promise<MeetHereAPIMapper[T]>;
-    post<T extends GetAPI>(api: T, params: Parameter<T>): Promise<MeetHereAPIMapper[T]>;
-    put<T extends GetAPI>(api: T, params: Parameter<T>): Promise<MeetHereAPIMapper[T]>;
-    delete<T extends GetAPI>(api: T, params: Parameter<T>): Promise<MeetHereAPIMapper[T]>;
+    post<T extends PostAPI>(api: T, params: Parameter<T>): Promise<MeetHereAPIMapper[T]>;
+    put<T extends PutAPI>(api: T, params: Parameter<T>): Promise<MeetHereAPIMapper[T]>;
+    delete<T extends DeleteAPI>(api: T, params: Parameter<T>): Promise<MeetHereAPIMapper[T]>;
 }
 
 const headers = {
@@ -45,6 +45,9 @@ class MeetHereBackend implements Backend {
     }
 
     public get<T extends GetAPI>(api: T, params: Parameter<T>): Promise<MeetHereAPIMapper[T]>  {
+        console.log("GET");
+        console.log(api,"api");
+        console.log(params,"params")
         return new Promise<MeetHereAPIMapper[T]>((ac, rj) => {
             Axios({
                 method: "get",
@@ -52,6 +55,7 @@ class MeetHereBackend implements Backend {
                 params,
                 headers
             }).then((rs) => {
+                console.log(rs,"response")
                 ac(forceCast(rs))
             }).catch((e) => {
                 app.$message({
@@ -63,6 +67,9 @@ class MeetHereBackend implements Backend {
         });
     }
     public post<T extends PostAPI>(api: T, params: Parameter<T>): Promise<MeetHereAPIMapper[T]> {
+        console.log("POST");
+        console.log(api,"api");
+        console.log(params,"params")
         return new Promise<MeetHereAPIMapper[T]>((ac, rj) => {
             Axios({
                 method: "post",
@@ -70,6 +77,7 @@ class MeetHereBackend implements Backend {
                 data: JSON.stringify(params),
                 headers
             }).then((rs) => {
+                console.log(rs,"response")
                 ac(forceCast(rs))
             }).catch((e) => {
                 app.$message({
@@ -103,7 +111,7 @@ class MeetHereBackend implements Backend {
             Axios({
                 method: "delete",
                 url: this.getURL(api),
-                data: JSON.stringify(params),
+                params,
                 headers
             }).then((rs) => {
                 ac(forceCast(rs))
