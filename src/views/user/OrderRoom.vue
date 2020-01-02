@@ -12,7 +12,7 @@
                 v-if="order.status === 0"
                 style="flex-grow: 1;display: flex;justify-content: flex-end;"
               >
-                <el-button size="mini" type="warning">取消订单</el-button>
+                <el-button size="mini" type="warning" @click="confirmCancel(order)">取消订单</el-button>
               </span>
             </order-info-card>
           </el-col>
@@ -36,6 +36,8 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import OrderInfoCard from "../../components/order/OrderInfoCard.vue";
 import { OrderPager } from "../../util/pager";
+import { Order } from '../../model/entity/order';
+import noop from '../../util/no-operation';
 
 @Component({
   components: {
@@ -52,6 +54,12 @@ class OrderRoom extends Vue {
   public created() {
     this.pager = new OrderPager(8);
     console.log('order room created!')
+  }
+
+  public confirmCancel(order: Order) {
+    this.$confirm("确认删除订单吗?").then(v => {
+      // todo cancel order
+    }).catch(noop)
   }
 }
 

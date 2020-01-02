@@ -8,7 +8,7 @@
       </el-row>
       <el-table :data="userList" border style="width: 100%">
         <el-table-column prop="id" label="ID" width="90px"></el-table-column>
-        <el-table-column prop="username" label="用户名" width="100px"></el-table-column>
+        <el-table-column prop="nickname" label="用户名" width="100px"></el-table-column>
         <el-table-column prop="email" label="邮箱" width="200px"></el-table-column>
         <el-table-column prop="mobilephone" label="手机号" width="200px"></el-table-column>
         <el-table-column label="审核">
@@ -43,8 +43,9 @@ import Vue from "vue";
 import { Order } from "../../model/entity/order";
 import { Prop, Component } from "vue-property-decorator";
 import Confirm from "../../components/common/Confirm.vue";
-import { UserBean } from "../../model/bean/user-bean";
+import { UserBean, defaultUserBean } from "../../model/bean/user-bean";
 import { noop } from "vue-class-component/lib/util";
+import backend from "../../logic/backend";
 
 @Component({
   components: {
@@ -52,9 +53,30 @@ import { noop } from "vue-class-component/lib/util";
   }
 })
 class UserRoom extends Vue {
-  private userList: UserBean[] = [];
+  private userList: UserBean[];
   constructor() {
     super();
+    this.userList = [];
+    backend
+      .get("/get-forget-users", {})
+      .then(rs => {
+        if (rs.data.code === 200) {
+          rs.data.result.forEach(v => {
+            if (v) {
+              this.userList.push({
+                isAdmin: false,
+                isLoggedIn: false,
+                id: v.id,
+                nickname: v.nickname,
+                avatar: v.avatar,
+                email: v.email,
+                mobilephone: v.phone
+              });
+            }
+          });
+        }
+      })
+      .catch(noop);
   }
 
   public confirmAccept(user: UserBean) {
@@ -83,18 +105,44 @@ class UserRoom extends Vue {
 
   public handleAccept(user: UserBean) {
     // todo accept reset password
-    this.$message({
-      message: "密码重置成功！",
-      type: "success"
-    });
+    backend.get("/accept-rediscover", {
+      username: user.nickname
+    }).then(rs => {
+      if (rs.data.code === 200) {
+        this.$message({
+          message: "密码重置成功！",
+          type: "success"
+        });
+      } else {
+        throw new Error(rs.data.message)
+      }
+    }).catch(e => {
+      this.$message({
+        message: e,
+        type: "error"
+      })
+    })
   }
 
   public handleReject(user: UserBean) {
     // todo reject reset password
-    this.$message({
-      message: "回绝请求成功！",
-      type: "success"
-    });
+    backend.get("/refuse-rediscover", {
+      username: user.nickname
+    }).then(rs => {
+      if (rs.data.code === 200) {
+        this.$message({
+          message: "回绝请求成功！",
+          type: "success"
+        });
+      } else {
+        throw new Error(rs.data.message)
+      }
+    }).catch(e => {
+      this.$message({
+        message: e,
+        type: "error"
+      })
+    })
   }
 }
 

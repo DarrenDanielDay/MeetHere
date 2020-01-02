@@ -39,17 +39,20 @@ import Vue from "vue";
 import { Site } from "../../model/entity/site";
 import { Prop, Component } from "vue-property-decorator";
 import { ElFormRule } from "../../util/element-ui-types";
-import Editor from '../common/Editor.vue';
-import { ChainAction } from '../../util/action';
-import { SiteBean, defaultSiteBean } from '../../model/bean/site-bean';
-import { FileListItem, ElUploadInternalFileDetail} from 'element-ui/types/upload';
+import Editor from "../common/Editor.vue";
+import { ChainAction } from "../../util/action";
+import { SiteBean, defaultSiteBean, emptySiteBean } from "../../model/bean/site-bean";
+import {
+  FileListItem,
+  ElUploadInternalFileDetail
+} from "element-ui/types/upload";
+import Axios from "axios";
 @Component({
   components: {
     Editor
   }
 })
 class SiteEditor extends Vue {
-
   private imageSelected: boolean = false;
   private imageFile?: File;
   private fileList: FileListItem[] = [];
@@ -67,7 +70,7 @@ class SiteEditor extends Vue {
   }
 
   public show(site: Site) {
-    this.imageSelected = site.image !== defaultSiteBean.image
+    this.imageSelected = site.image !== defaultSiteBean.image;
     this.siteCopy = site.clone();
     const editor = this.$refs["editor"];
     if (editor instanceof Editor) {
@@ -77,22 +80,70 @@ class SiteEditor extends Vue {
 
   public onSelectImage(
     a: ElUploadInternalFileDetail,
-    b: ElUploadInternalFileDetail[]) {
-      this.imageFile = a.raw
-      this.imageSelected = true
+    b: ElUploadInternalFileDetail[]
+  ) {
+    console.log("select!")
+    this.imageFile = a.raw;
+    console.log(this.imageFile)
+    this.imageSelected = true;
   }
 
   public onRemoveImage() {
-    this.imageSelected = false
-    this.imageFile = undefined
+    this.imageSelected = false;
+    this.imageFile = undefined;
   }
 
   public submit(action: ChainAction, model: SiteBean) {
-    if (model.id === defaultSiteBean.id) {
+    console.log(model)
+    if (model.id === emptySiteBean.id) {
       // new
-      
+      console.log("new!")
+      if (this.imageSelected && this.imageFile) {
+        const formData = new FormData();
+        formData.append("image", this.imageFile);
+        console.log("POST http://ecnuer996.cn/MeetHere/api/add-site");
+        Axios({
+          method: "POST",
+          url: "http://ecnuer996.cn/MeetHere/api/add-site",
+          params: {
+            introduction: this.siteCopy.introduction,
+            name: this.siteCopy.name,
+            price: this.siteCopy.price,
+            venueId: this.siteCopy.venueID
+          },
+          headers: { "Content-Type": "multipart/form-data" },
+          data: formData
+        })
+          .then(rs => {
+            if (rs.data) {
+              if (rs.data.code === 200) {
+                this.$message({
+                  message: "添加场地成功",
+                  type: "success"
+                });
+                action.notify()
+              } else {
+                throw new Error(rs.data.message);
+              }
+            }
+          })
+          .catch(e => {
+            this.$message({
+              message: e,
+              type: "error"
+            });
+            action.abort(e)
+          });
+      } else {
+        this.$message({
+          message: "请选择图片!",
+          type: "error"
+        });
+      }
     } else {
       // update
+      console.log("update!")
+      action.notify()
     }
   }
 }

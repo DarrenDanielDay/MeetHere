@@ -125,6 +125,7 @@ import moment from "moment";
 import { noop } from "vue-class-component/lib/util";
 import { BookableEnum } from "../../util/apis";
 import { ChainAction } from "../../util/action";
+import { userverification } from "../../store/user-verification";
 
 const testTable: StatusClass[] = [];
 const bookableMapper: Record<BookableEnum, StatusClass> = {
@@ -302,7 +303,25 @@ class MakeOrderCard extends Vue {
         this.payIcon = "el-icon-check";
         setTimeout(() => {
           // todo
-          action.notify();
+          const peroid = this.pickedInterval;
+          if (peroid) {
+            backend
+              .post("/reserve", {
+                siteId: this.pickedSite.id,
+                userId: userverification.getCurrentUser().id,
+                bookDate: moment(this.date).format("YYYY-MM-DD"),
+                beginPeriod: peroid[0],
+                endPeriod: peroid[1]
+              })
+              .then(rs => {
+                if (rs.data.code === 200) {
+                  action.notify();
+                } else {
+                  action.abort(rs.data.message);
+                }
+              })
+              .catch(noop);
+          }
         }, 3000);
       })
       .wait()

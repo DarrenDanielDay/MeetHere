@@ -103,6 +103,7 @@ class VenueEditor extends Vue {
   private showEditor(site: Site) {
     const siteEditor = this.$refs["site-editor"];
     if (siteEditor instanceof SiteEditor) {
+      site.venueID = this.venueCopy.id
       siteEditor.show(site);
     }
   }

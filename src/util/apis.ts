@@ -30,6 +30,20 @@ export interface MeetHereResponse<T> {
  */
 
 export interface MeetHereAPIParameterMapper {
+    "/accept-rediscover": {
+        username: string
+    }
+    "/refuse-rediscover": {
+        username: string
+    }
+    "/get-forget-users": {};
+    "/reserve": {
+        siteId: number,
+        userId: number,
+        bookDate: string,
+        beginPeriod: number,
+        endPeriod: number
+    }
     "/delete-site": {
         id: number
     };
@@ -146,6 +160,28 @@ export type BookableEnum = -1 | 0 | 1;
  */
 
 export interface MeetHereAPIMapper {
+    "/accept-rediscover": MeetHereResponse<NoMoreInfo>;
+    "/refuse-rediscover": MeetHereResponse<NoMoreInfo>;
+    "/get-forget-users": MeetHereResponse<Array<{
+        id: number,
+        nickname: string,
+        avatar: string,
+        phone: string,
+        email: string
+    } | null>>
+    "/reserve": MeetHereResponse<{
+        detail: {
+            siteName: string,
+            siteImage: string,
+            venueName: string,
+            bookTime: string,
+            reserveDate: string,
+            cost: number,
+            beginTime: string,
+            endTime: string,
+            state: string
+        }
+    }>;
     "/delete-site": MeetHereResponse<NoMoreInfo>;
     "/forget-password": MeetHereResponse<NoMoreInfo>;
     "/topNVenues": MeetHereResponse<{
@@ -381,6 +417,9 @@ export type UserAPI =
     "/forget-password";
 
 export type ManagerAPI =
+    "/accept-rediscover" |
+    "/refuse-rediscover" |
+    "/get-forget-users" |
     "/manager-sign-in";
 
 export type CommentAPI =

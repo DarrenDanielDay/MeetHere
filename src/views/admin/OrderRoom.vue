@@ -38,13 +38,15 @@ import { noop } from "vue-class-component/lib/util";
 
 @Component({
   components: {
-    OrderCard: OrderInfoCard
+    OrderCard: OrderInfoCard,
+    Confirm: Confirm
   }
 })
 class OrderRoom extends Vue {
   public pager: OrderPager = new OrderPager(8);
   constructor() {
     super();
+    this.pager.onPageChange()
   }
   public confirmReject(order: Order) {
     const confirm = this.$refs["reject-order-confirm"];
