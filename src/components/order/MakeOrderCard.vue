@@ -26,7 +26,7 @@
               <el-row>请选择一个日期。我们会根据所选日期在下一步中给出可选时间段。</el-row>
               <el-row>
                 <el-col>
-                  <el-date-picker v-model="date"></el-date-picker>
+                  <el-date-picker v-model="date" :picker-options="pickerOptions"></el-date-picker>
                 </el-col>
               </el-row>
             </div>
@@ -126,6 +126,7 @@ import { noop } from "vue-class-component/lib/util";
 import { BookableEnum } from "../../util/apis";
 import { ChainAction } from "../../util/action";
 import { userverification } from "../../store/user-verification";
+import { ElDatePicker, DatePickerOptions } from 'element-ui/types/date-picker';
 
 const testTable: StatusClass[] = [];
 const bookableMapper: Record<BookableEnum, StatusClass> = {
@@ -189,6 +190,11 @@ class MakeOrderCard extends Vue {
   private totalSteps = 4;
   private lastStatus: boolean = true;
   private nextStatus: boolean = false;
+  private pickerOptions: DatePickerOptions = {
+    disabledDate: (d: Date): boolean => {
+      return d.getTime() < new Date().getTime()
+    }
+  }
 
   constructor() {
     super();
